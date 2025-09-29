@@ -5,12 +5,22 @@ import easyocr
 st.title("My OCR App")
 st.write("Upload an image and get the extracted text using EasyOCR.")
 
-# Cache the EasyOCR reader to avoid reloading models on every run
-@st.cache_resource
-def get_reader():
-    return easyocr.Reader(['en'])
+# Language selector
+language_options = {
+    "English": "en",
+    "Hindi": "hi",
+    "Spanish": "es",
+    "French": "fr"
+}
+lang_choice = st.selectbox("Select OCR Language", list(language_options.keys()))
+lang_code = language_options[lang_choice]
 
-reader = get_reader()
+# Cache the EasyOCR reader
+@st.cache_resource
+def get_reader(langs):
+    return easyocr.Reader(langs)
+
+reader = get_reader([lang_code])
 
 # Upload image
 uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
