@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📸 OCR Text Extractor</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Your CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📸 OCR Text Extractor</h1>
+
+        <!-- Drag & Drop / File Input -->
+        <div class="upload-area" id="upload-area">
+            <p>Drag & drop images here or click to select</p>
+            <input type="file" id="fileInput" multiple>
+        </div>
+
+        <!-- Results -->
+        <div id="results"></div>
+    </div>
+
+    <!-- Minimal JS for drag & drop -->
+    <script>
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('fileInput');
+        const resultsDiv = document.getElementById('results');
+
+        // Click to open file dialog
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Drag & Drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('hover');
+        });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('hover'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('hover');
+            fileInput.files = e.dataTransfer.files;
+            showFiles(e.dataTransfer.files);
+        });
+
+        // File input change
+        fileInput.addEventListener('change', () => showFiles(fileInput.files));
+
+        function showFiles(files) {
+            resultsDiv.innerHTML = '';
+            Array.from(files).forEach(file => {
+                const div = document.createElement('div');
+                div.classList.add('result-item');
+                div.textContent = `Uploaded: ${file.name}`;
+                resultsDiv.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
