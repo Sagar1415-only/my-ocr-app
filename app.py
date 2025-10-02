@@ -1,25 +1,34 @@
 import streamlit as st
 import easyocr
 import numpy as np
-import cv2
 import pandas as pd
-from io import BytesIO
 from PIL import Image
+from io import BytesIO
+import zipfile
 
 # Initialize EasyOCR reader
-reader = easyocr.Reader(['en'])  # add other languages if needed
+reader = easyocr.Reader(['en'])  # Add more languages if needed
 
 st.title("📸 OCR Text Extractor")
 
-# Upload images (single or multiple)
+# --- Upload Images with drag-and-drop ---
 uploaded_files = st.file_uploader(
-    "Upload image(s)", type=["png", "jpg", "jpeg"], accept_multiple_files=True
+    "Upload image(s) (drag & drop supported)", 
+    type=["png", "jpg", "jpeg"], 
+    accept_multiple_files=True
 )
 
 if uploaded_files:
     extracted_results = []
 
-    for uploaded_file in uploaded_files:
+    # --- User-friendly OCR message ---
+    status_text = st.empty()
+    status_text.text("Processing OCR...")
+
+    # --- Progress bar ---
+    my_bar = st.progress(0)
+    
+    for i, uploaded_file in enumerate(uploaded_files):
         # Read image
         image = Image.open(uploaded_file).convert("RGB")
         img_array = np.array(image)
@@ -30,40 +39,32 @@ if uploaded_files:
 
         # Show image + extracted text
         st.image(image, caption=uploaded_file.name, use_column_width=True)
-        st.text_area(
-            f"Extracted Text from {uploaded_file.name}",
-            extracted_text,
-            height=150,
-        )
+        st.text_area(f"Extracted Text from {uploaded_file.name}", extracted_text, height=150)
 
         extracted_results.append((uploaded_file.name, extracted_text))
 
+        # Update progress
+        my_bar.progress((i+1)/len(uploaded_files))
+
+    # Remove progress bar and status message
+    my_bar.empty()
+    status_text.empty()
+
     # --- DOWNLOAD OPTIONS ---
     if len(extracted_results) == 1:
-        # Single file case
         filename, text = extracted_results[0]
-
-        # TXT
-        st.download_button(
-            "Download as .txt",
-            text,
-            file_name="extracted.txt",
-            mime="text/plain",
-        )
-
-        # (PDF disabled for ARM64)
-        # If you later switch to fpdf2 or x64 Python, you can re-enable PDF export
-
+        st.download_button("Download as .txt", text, file_name=f"{filename}.txt", mime="text/plain")
+    
     else:
-        # Multiple files case → export as CSV
-        df = pd.DataFrame(
-            [{"filename": name, "text": text} for name, text in extracted_results]
-        )
-        csv_bytes = df.to_csv(index=False).encode("utf-8")
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+            for filename, text in extracted_results:
+                zip_file.writestr(f"{filename}.txt", text)
+        zip_buffer.seek(0)
 
         st.download_button(
-            "Download all results as .csv",
-            csv_bytes,
-            file_name="results.csv",
-            mime="text/csv",
+            "Download all results as ZIP",
+            zip_buffer,
+            file_name="extracted_texts.zip",
+            mime="application/zip"
         )
